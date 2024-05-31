@@ -1,8 +1,10 @@
 import sys
 import time
 import heapq
-sys.path.append('../lib/python3') 
+
+sys.path.append('../lib/python3')
 from Taquin import Taquin
+
 
 # Función para calcular la distancia de Manhattan
 def manhattan_distance(board):
@@ -18,46 +20,34 @@ def manhattan_distance(board):
             distance += abs(target_x - current_x) + abs(target_y - current_y)
     return distance
 
-# Clase auxiliar para priorizar los tableros en la cola de prioridad
-class PrioritizedBoard:
-    def __init__(self, priority, board, path):
-        self.priority = priority
-        self.board = board
-        self.path = path
-
-    def __lt__(self, other):
-        return self.priority < other.priority
 
 def greedy_best_first_solve(board):
     moves = ['left', 'right', 'down', 'up']
     visited = set()
     queue = []
 
-    initial_distance = manhattan_distance(board)
-    heapq.heappush(queue, PrioritizedBoard(initial_distance, board, []))
-
-    start_time = time.time()  # Captura el tiempo de inicio
+    # Inicializa la cola con el tablero inicial
+    heapq.heappush(queue, (manhattan_distance(board), board, []))
 
     while queue:
-        current = heapq.heappop(queue)
-        current_board = current.board
-        current_path = current.path
+        _, current_board, path = heapq.heappop(queue)
 
+        # Si el tablero está resuelto, devuelve el camino y termina
         if current_board.is_solved():
-            end_time = time.time()  # Captura el tiempo de finalización
-            elapsed_time = end_time - start_time  # Calcula el tiempo transcurrido
-            return current_path, elapsed_time
+            return path
 
         visited.add(tuple(current_board.m_Board))
 
+        # Prueba todos los movimientos posibles
         for move in moves:
-            new_board = Taquin(*current_board.m_Size)
-            new_board.m_Board = current_board.m_Board[:]
+            new_board = current_board.copy()
             if new_board.move(move) and tuple(new_board.m_Board) not in visited:
-                new_path = current_path + [move]
-                heapq.heappush(queue, PrioritizedBoard(manhattan_distance(new_board), new_board, new_path))
+                new_path = path + [move]
+                heapq.heappush(queue, (manhattan_distance(new_board), new_board, new_path))
 
-    return [], 0
+    # Si no se encuentra ninguna solución, devuelve una lista vacía
+    return []
+
 
 if __name__ == "__main__":
     w, h = [int(v) for v in sys.argv[1:3]]
@@ -71,10 +61,14 @@ if __name__ == "__main__":
     print(b.is_solved())
     print('***********************')
 
-    solution, elapsed_time = greedy_best_first_solve(b)
+    start_time = time.time()
+    solution = greedy_best_first_solve(b)
+
     for move in solution:
         b.move(move)
         print('***********************')
         print(b)
+    end_time = time.time()
+    elapsed_time = end_time - start_time
     print("Puzzle solved!")
     print("Tiempo de ejecución:", elapsed_time, "segundos")
